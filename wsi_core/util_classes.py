@@ -83,7 +83,9 @@ class isInContourV3_Easy(Contour_Checking_fn):
 			all_points = [center]
 		
 		for points in all_points:
-			if cv2.pointPolygonTest(self.cont, points, False) >= 0:
+			point_one = float(points[0])
+			point_two = float(points[1])
+			if cv2.pointPolygonTest(self.cont, (point_one, point_two), False) >= 0:
 				return 1
 		return 0
 
@@ -105,10 +107,14 @@ class isInContourV3_Hard(Contour_Checking_fn):
 			all_points = [center]
 		
 		for points in all_points:
-			if cv2.pointPolygonTest(self.cont, points, False) < 0:
+			point_one = float(points[0])
+			point_two = float(points[1])
+			if cv2.pointPolygonTest(self.cont, (point_one, point_two), False) < 0:
 				return 0
 		return 1
 
 
+
+		
 
 		
