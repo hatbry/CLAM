@@ -19,6 +19,8 @@ from utils.file_utils import load_pkl, save_pkl
 
 Image.MAX_IMAGE_PIXELS = 933120000
 
+DEBUG = False
+
 class WholeSlideImage(object):
     def __init__(self, path):
 
@@ -447,15 +449,32 @@ class WholeSlideImage(object):
         x_coords, y_coords = np.meshgrid(x_range, y_range, indexing='ij')
         coord_candidates = np.array([x_coords.flatten(), y_coords.flatten()]).transpose()
 
-        num_workers = mp.cpu_count()
-        if num_workers > 4:
-            num_workers = 4
-        pool = mp.Pool(num_workers)
 
+
+        '''
+        process_coord_candidate function takes these args: coord, contour_holes, ref_patch_size, cont_check_fn
+        '''
         iterable = [(coord, contour_holes, ref_patch_size[0], cont_check_fn) for coord in coord_candidates]
-        results = pool.starmap(WholeSlideImage.process_coord_candidate, iterable)
-        pool.close()
-        results = np.array([result for result in results if result is not None])
+        if DEBUG:
+            results = []
+            for i in iterable:
+                cor = i[0]
+                conto = i[1]
+                re = i[2]
+                chec = i[3]
+                x = WholeSlideImage.process_coord_candidate(cor, conto, re, chec)
+                results.append(x)
+            results = np.array([result for result in results if result is not None])
+
+        else:
+            num_workers = mp.cpu_count()
+            if num_workers > 4:
+                num_workers = 4
+            pool = mp.Pool(num_workers)
+
+            results = pool.starmap(WholeSlideImage.process_coord_candidate, iterable)
+            pool.close()
+            results = np.array([result for result in results if result is not None])
         
         print('Extracted {} coordinates'.format(len(results)))
 
@@ -734,6 +753,7 @@ class WholeSlideImage(object):
         tissue_mask = tissue_mask.astype(bool)
         print('detected {}/{} of region as tissue'.format(tissue_mask.sum(), tissue_mask.size))
         return tissue_mask
+
 
 
 
