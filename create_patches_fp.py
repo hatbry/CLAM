@@ -57,7 +57,7 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 
 
 	slides = sorted(os.listdir(source))
-	slides = [slide for slide in slides if os.path.isfile(os.path.join(source, slide))]
+	slides = [slide for slide in slides if os.path.isfile(os.path.join(source, slide)) and slide.endswith('.svs') and not slide.startswith('.')]
 	if process_list is None:
 		df = initialize_df(slides, seg_params, filter_params, vis_params, patch_params)
 	
@@ -223,23 +223,26 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 		
 	return seg_times, patch_times
 
+default_path = '/Volumes/Extreme SSD/AI/Slides'
+save_dir_default = '/Volumes/Extreme SSD/AI/Root Dir'
+
 parser = argparse.ArgumentParser(description='seg and patch')
 parser.add_argument('--source', type = str,
-					help='path to folder containing raw wsi image files')
+					help='path to folder containing raw wsi image files', default=default_path)
 parser.add_argument('--step_size', type = int, default=256,
 					help='step_size')
 parser.add_argument('--patch_size', type = int, default=256,
 					help='patch_size')
-parser.add_argument('--patch', default=False, action='store_true')
-parser.add_argument('--seg', default=False, action='store_true')
-parser.add_argument('--stitch', default=False, action='store_true')
-parser.add_argument('--no_auto_skip', default=True, action='store_false')
-parser.add_argument('--save_dir', type = str,
+parser.add_argument('--patch', default=True, action='store_true') # Default False
+parser.add_argument('--seg', default=True, action='store_true')  # Default False
+parser.add_argument('--stitch', default=True, action='store_true')  # Default False
+parser.add_argument('--no_auto_skip', default=False, action='store_false') # Default = True
+parser.add_argument('--save_dir', type = str, default=save_dir_default,
 					help='directory to save processed data')
 parser.add_argument('--preset', default=None, type=str,
 					help='predefined profile of default segmentation and filter parameters (.csv)')
 parser.add_argument('--patch_level', type=int, default=0, 
-					help='downsample level at which to patch')
+					help='downsample level at which to patch') # 0 is highest resolution
 parser.add_argument('--process_list',  type = str, default=None,
 					help='name of list of images to process with parameters (.csv)')
 
@@ -272,10 +275,10 @@ if __name__ == '__main__':
 		if key not in ['source']:
 			os.makedirs(val, exist_ok=True)
 
-	seg_params = {'seg_level': -1, 'sthresh': 8, 'mthresh': 7, 'close': 4, 'use_otsu': False,
+	seg_params = {'seg_level': -1, 'sthresh': 15, 'mthresh': 11, 'close': 4, 'use_otsu': False,
 				  'keep_ids': 'none', 'exclude_ids': 'none'}
-	filter_params = {'a_t':100, 'a_h': 16, 'max_n_holes':8}
-	vis_params = {'vis_level': -1, 'line_thickness': 250}
+	filter_params = {'a_t':100, 'a_h': 16, 'max_n_holes':8}  # Default max_n_holes is 8 to 10; a_t = 100, a_h = 16
+	vis_params = {'vis_level': -1, 'line_thickness': 150}
 	patch_params = {'use_padding': True, 'contour_fn': 'four_pt'}
 
 	if args.preset:
@@ -305,3 +308,4 @@ if __name__ == '__main__':
 											stitch= args.stitch,
 											patch_level=args.patch_level, patch = args.patch,
 											process_list = process_list, auto_skip=args.no_auto_skip)
+
