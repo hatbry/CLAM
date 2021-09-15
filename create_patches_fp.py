@@ -223,49 +223,74 @@ def seg_and_patch(source, save_dir, patch_save_dir, mask_save_dir, stitch_save_d
 		
 	return seg_times, patch_times
 
-default_path = '/Volumes/Extreme SSD/AI/Slides'
-save_dir_default = '/Volumes/Extreme SSD/AI/Root Dir'
 
-parser = argparse.ArgumentParser(description='seg and patch')
-parser.add_argument('--source', type = str,
-					help='path to folder containing raw wsi image files', default=default_path)
-parser.add_argument('--step_size', type = int, default=256,
-					help='step_size')
-parser.add_argument('--patch_size', type = int, default=256,
-					help='patch_size')
-parser.add_argument('--patch', default=True, action='store_true') # Default False
-parser.add_argument('--seg', default=True, action='store_true')  # Default False
-parser.add_argument('--stitch', default=True, action='store_true')  # Default False
-parser.add_argument('--no_auto_skip', default=False, action='store_false') # Default = True
-parser.add_argument('--save_dir', type = str, default=save_dir_default,
-					help='directory to save processed data')
-parser.add_argument('--preset', default=None, type=str,
-					help='predefined profile of default segmentation and filter parameters (.csv)')
-parser.add_argument('--patch_level', type=int, default=0, 
-					help='downsample level at which to patch') # 0 is highest resolution
-parser.add_argument('--process_list',  type = str, default=None,
-					help='name of list of images to process with parameters (.csv)')
+
+'''
+seg_level: 		downsample level on which to segment the WSI (default: -1, which 
+				uses the downsample in the WSI closest to 64x downsample)
+sthresh: 		segmentation threshold (positive integer, default: 8, using a higher 
+				threshold leads to less foreground and more background detection)
+mthresh: 		median filter size (positive, odd integer, default: 7)
+use_otsu: 		use otsu's method instead of simple binary thresholding (default: False)
+close: 			additional morphological closing to apply following initial thresholding 
+				(positive integer or -1, default: 4)
+a_t: 			area filter threshold for tissue (positive integer, the minimum size of 
+				detected foreground contours to consider, relative to a reference patch 
+				size of 512 x 512 at level 0, e.g. a value 10 means only detected foreground 
+				contours of size greater than 10 512 x 512 sized patches at level 0 will 
+				be processed, default: 100)
+a_h: 			area filter threshold for holes (positive integer, the minimum size of 
+				detected holes/cavities in foreground contours to avoid, once again relative 
+				to 512 x 512 sized patches at level 0, default: 16)
+max_n_holes: 	maximum of holes to consider per detected foreground contours (positive 
+				integer, default: 10, higher maximum leads to more accurate patching but 
+				increases computational cost)
+vis_level: 		downsample level to visualize the segmentation results (default: -1, 
+				which uses the downsample in the WSI closest to 64x downsample)
+line_thickness: line thickness to draw visualize the segmentation results (positive i
+				nteger, in terms of number of pixels occupied by drawn line at level 0, 
+				default: 250)
+use_padding: 	whether to pad the border of the slide (default: True)
+contour_fn: 	contour checking function to decide whether a patch should be considered 
+				foreground or background (choices between 'four_pt' - checks if all four 
+				points in a small, grid around the center of the patch are inside the contour, 'center' - 
+				checks if the center of the patch is inside the contour, 'basic' - checks if the top-left 
+				corner of the patch is inside the contour, default: 'four_pt')
+
+--custom_downsample: 	factor for custom downscale (not recommended, 
+						ideally should first check if native downsamples exist)
+--patch_level: 			which downsample pyramid level to extract patches from 
+						(default is 0, the highest available resolution)
+--no_auto_skip: 		by default, the script will skip over files for which 
+						patched .h5 files already exist in the desination folder, 
+						this toggle can be used to override this behavior
+'''
+
 
 if __name__ == '__main__':
-	args = parser.parse_args()
+	process_list = False
+	read_preset_file = False
 
-	patch_save_dir = os.path.join(args.save_dir, 'patches')
-	mask_save_dir = os.path.join(args.save_dir, 'masks')
-	stitch_save_dir = os.path.join(args.save_dir, 'stitches')
+	root_dir_default = '/Volumes/Extreme SSD/AI/Root Dir'
+	source_path = '/Volumes/Extreme SSD/AI/Root Dir/slides'
 
-	if args.process_list:
-		process_list = os.path.join(args.save_dir, args.process_list)
+	patch_save_dir = os.path.join(root_dir_default, 'patches')
+	mask_save_dir = os.path.join(root_dir_default, 'masks')
+	stitch_save_dir = os.path.join(root_dir_default, 'stitches')
+
+	if process_list:
+		process_list = os.path.join(root_dir_default, process_list)
 
 	else:
 		process_list = None
 
-	print('source: ', args.source)
+	print('source: ', source_path)
 	print('patch_save_dir: ', patch_save_dir)
 	print('mask_save_dir: ', mask_save_dir)
 	print('stitch_save_dir: ', stitch_save_dir)
 	
-	directories = {'source': args.source, 
-				   'save_dir': args.save_dir,
+	directories = {'source': source_path, 
+				   'save_dir': root_dir_default,
 				   'patch_save_dir': patch_save_dir, 
 				   'mask_save_dir' : mask_save_dir, 
 				   'stitch_save_dir': stitch_save_dir} 
@@ -275,14 +300,16 @@ if __name__ == '__main__':
 		if key not in ['source']:
 			os.makedirs(val, exist_ok=True)
 
-	seg_params = {'seg_level': -1, 'sthresh': 15, 'mthresh': 11, 'close': 4, 'use_otsu': False,
-				  'keep_ids': 'none', 'exclude_ids': 'none'}
-	filter_params = {'a_t':100, 'a_h': 16, 'max_n_holes':8}  # Default max_n_holes is 8 to 10; a_t = 100, a_h = 16
+	seg_params = {'seg_level': -1, 'sthresh': 15, 'mthresh': 11, 
+				  'close': 4, 'use_otsu': False, 'keep_ids': 'none', 'exclude_ids': 'none'}
+	filter_params = {'a_t': 100, 'a_h': 16, 'max_n_holes': 8}
 	vis_params = {'vis_level': -1, 'line_thickness': 150}
-	patch_params = {'use_padding': True, 'contour_fn': 'four_pt'}
+	patch_params = {'use_padding': True, 'contour_fn': 'four_pt'}  
+	extra_params = {'white_thresh': 5, 'black_thresh': 50, 
+					'step_size': 256, 'patch_size': 256, 'patch_level': 0}  #patch_level = 0 correpsonds to lowest downsample/highest quality
 
-	if args.preset:
-		preset_df = pd.read_csv(os.path.join('presets', args.preset))
+	if read_preset_file:
+		preset_df = pd.read_csv(os.path.join('presets', read_preset_file))
 		for key in seg_params.keys():
 			seg_params[key] = preset_df.loc[0, key]
 
@@ -303,9 +330,8 @@ if __name__ == '__main__':
 	print(parameters)
 
 	seg_times, patch_times = seg_and_patch(**directories, **parameters,
-											patch_size = args.patch_size, step_size=args.step_size, 
-											seg = args.seg,  use_default_params=False, save_mask = True, 
-											stitch= args.stitch,
-											patch_level=args.patch_level, patch = args.patch,
-											process_list = process_list, auto_skip=args.no_auto_skip)
-
+											patch_size = extra_params['patch_size'], step_size=extra_params['step_size'], 
+											seg=True,  use_default_params=False, save_mask = True, 
+											stitch= True,
+											patch_level=extra_params['patch_level'], patch = True,
+											process_list = process_list, auto_skip=False)
