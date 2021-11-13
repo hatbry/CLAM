@@ -1,4 +1,3 @@
-from matplotlib.pyplot import sca
 import openslide as osh
 import cv2
 import os
@@ -86,7 +85,11 @@ for idx in trange(len(coords)):
 
 overlay = cv2.GaussianBlur(overlay, tuple((patch_size).astype(int) * 2 + 1), 0)
 
-img = np.array(slide.read_region((0, 0), vis_level, region_size).convert('RGB'))
+blank_canvas = True
+if blank_canvas:
+    img = np.array(Image.new(size=region_size, mode="RGB", color=(255,255,255))) 
+else:
+    img = np.array(slide.read_region((0, 0), vis_level, region_size).convert('RGB'))
 
 cmap = plt.get_cmap('coolwarm')
 
@@ -106,9 +109,9 @@ for idx in trange(len(coords)):
 
 del overlay
 
-fresh_img = np.array(slide.read_region((0, 0), vis_level, region_size).convert('RGB'))
-img = cv2.addWeighted(img, 0.4, fresh_img, 0.6, 0, fresh_img)
+#fresh_img = np.array(slide.read_region((0, 0), vis_level, region_size).convert('RGB'))
+#img = cv2.addWeighted(img, 0.4, fresh_img, 0.6, 0, fresh_img)
 img = Image.fromarray(img)
-img.show()
+img.save('/Users/brycehatfield/Documents/Programming/Slides/Root Dir/heatmap 9 3412 2-H-1 HCC.png')
 
 print('Done in {} seconds'.format(round(time.time() - start, 5)))
