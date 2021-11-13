@@ -15,16 +15,19 @@ from datasets.dataset_generic import Generic_WSI_Classification_Dataset, Generic
 import h5py
 from utils.eval_utils import *
 
+root_dir = 'X:/Dr Hatfield/CLAM/'
+results = os.path.join(root_dir, 'results')
+
 # Training settings
 parser = argparse.ArgumentParser(description='CLAM Evaluation Script')
-parser.add_argument('--data_root_dir', type=str, default=None,
+parser.add_argument('--data_root_dir', type=str, default=root_dir,
                     help='data directory')
-parser.add_argument('--results_dir', type=str, default='./results',
+parser.add_argument('--results_dir', type=str, default=results,
                     help='relative path to results folder, i.e. '+
                     'the directory containing models_exp_code relative to project root (default: ./results)')
-parser.add_argument('--save_exp_code', type=str, default=None,
+parser.add_argument('--save_exp_code', type=str, default=True,
                     help='experiment code to save eval results')
-parser.add_argument('--models_exp_code', type=str, default=None,
+parser.add_argument('--models_exp_code', type=str, default='checkpoints',
                     help='experiment code to load trained models (directory under results_dir containing model checkpoints')
 parser.add_argument('--splits_dir', type=str, default=None,
                     help='splits directory, if using custom splits other than what matches the task (default: None)')
@@ -34,14 +37,14 @@ parser.add_argument('--model_type', type=str, choices=['clam_sb', 'clam_mb', 'mi
                     help='type of model (default: clam_sb)')
 parser.add_argument('--drop_out', action='store_true', default=False, 
                     help='whether model uses dropout')
-parser.add_argument('--k', type=int, default=10, help='number of folds (default: 10)')
+parser.add_argument('--k', type=int, default=2, help='number of folds (default: 10)')
 parser.add_argument('--k_start', type=int, default=-1, help='start fold (default: -1, last fold)')
 parser.add_argument('--k_end', type=int, default=-1, help='end fold (default: -1, first fold)')
 parser.add_argument('--fold', type=int, default=-1, help='single fold to evaluate')
 parser.add_argument('--micro_average', action='store_true', default=False, 
                     help='use micro_average instead of macro_avearge for multiclass AUC')
-parser.add_argument('--split', type=str, choices=['train', 'val', 'test', 'all'], default='test')
-parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping'])
+parser.add_argument('--split', type=str, choices=['train', 'val', 'test', 'all'], default='train')
+parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal',  'task_2_tumor_subtyping'], default='task_1_tumor_vs_normal')
 args = parser.parse_args()
 
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")

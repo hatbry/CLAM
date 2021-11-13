@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description='Heatmap inference script')
 parser.add_argument('--save_exp_code', type=str, default=None,
 					help='experiment code')
 parser.add_argument('--overlap', type=float, default=None)
-parser.add_argument('--config_file', type=str, default="heatmap_config_template.yaml")
+parser.add_argument('--config_file', type=str, default=r"C:\Users\bhatfiel\OneDrive - VCUHealth\Documents\GitHub\CLAM\heatmaps\configs\config_template.yaml")
 args = parser.parse_args()
 
 def infer_single_slide(model, features, label, reverse_label_dict, k=1):
@@ -79,7 +79,7 @@ def parse_config_dict(args, config_dict):
 	return config_dict
 
 if __name__ == '__main__':
-	config_path = os.path.join('heatmaps/configs', args.config_file)
+	config_path = args.config_file
 	config_dict = yaml.safe_load(open(config_path, 'r'))
 	config_dict = parse_config_dict(args, config_dict)
 

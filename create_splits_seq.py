@@ -5,14 +5,16 @@ from datasets.dataset_generic import Generic_WSI_Classification_Dataset, Generic
 import argparse
 import numpy as np
 
+root_dir = 'X:/Dr Hatfield/CLAM/'
+
 parser = argparse.ArgumentParser(description='Creating splits for whole slide classification')
 parser.add_argument('--label_frac', type=float, default= 1.0,
                     help='fraction of labels (default: 1)')
 parser.add_argument('--seed', type=int, default=1,
                     help='random seed (default: 1)')
-parser.add_argument('--k', type=int, default=10,
+parser.add_argument('--k', type=int, default=1,
                     help='number of splits (default: 10)')
-parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal', 'task_2_tumor_subtyping'])
+parser.add_argument('--task', type=str, choices=['task_1_tumor_vs_normal', 'task_2_tumor_subtyping'], default='task_1_tumor_vs_normal')
 parser.add_argument('--val_frac', type=float, default= 0.1,
                     help='fraction of labels for validation (default: 0.1)')
 parser.add_argument('--test_frac', type=float, default= 0.1,
@@ -55,7 +57,7 @@ if __name__ == '__main__':
         label_fracs = [0.1, 0.25, 0.5, 0.75, 1.0]
     
     for lf in label_fracs:
-        split_dir = 'splits/'+ str(args.task) + '_{}'.format(int(lf * 100))
+        split_dir = os.path.join(root_dir, 'splits/') + str(args.task) + '_{}'.format(int(lf * 100))
         os.makedirs(split_dir, exist_ok=True)
         dataset.create_splits(k = args.k, val_num = val_num, test_num = test_num, label_frac=lf)
         for i in range(args.k):

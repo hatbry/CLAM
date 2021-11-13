@@ -15,6 +15,9 @@ from utils.file_utils import save_hdf5
 from PIL import Image
 import h5py
 import openslide
+from tqdm import tqdm
+
+
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 def compute_w_loader(file_path, output_path, wsi, model,
@@ -41,7 +44,7 @@ def compute_w_loader(file_path, output_path, wsi, model,
 		print('processing {}: total of {} batches'.format(file_path,len(loader)))
 
 	mode = 'w'
-	for count, (batch, coords) in enumerate(loader):
+	for count, (batch, coords) in enumerate(tqdm(loader)):
 		with torch.no_grad():	
 			if count % print_every == 0:
 				print('batch {}/{}, {} files processed'.format(count, len(loader), count * batch_size))
@@ -56,13 +59,17 @@ def compute_w_loader(file_path, output_path, wsi, model,
 	
 	return output_path
 
+h5_dir = 'X:/Dr Hatfield/CLAM/'
+slide_dir = 'X:/Dr Hatfield/CLAM/slides'
+csv_dir = 'X:/Dr Hatfield/CLAM/process_list_autogen.csv'
+features_dir = 'X:/Dr Hatfield/CLAM/features'
 
 parser = argparse.ArgumentParser(description='Feature Extraction')
-parser.add_argument('--data_h5_dir', type=str, default=None)
-parser.add_argument('--data_slide_dir', type=str, default=None)
+parser.add_argument('--data_h5_dir', type=str, default=h5_dir)
+parser.add_argument('--data_slide_dir', type=str, default=slide_dir)
 parser.add_argument('--slide_ext', type=str, default= '.svs')
-parser.add_argument('--csv_path', type=str, default=None)
-parser.add_argument('--feat_dir', type=str, default=None)
+parser.add_argument('--csv_path', type=str, default=csv_dir)
+parser.add_argument('--feat_dir', type=str, default=features_dir)
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--no_auto_skip', default=False, action='store_true')
 parser.add_argument('--custom_downsample', type=int, default=1)
@@ -110,9 +117,11 @@ if __name__ == '__main__':
 		output_path = os.path.join(args.feat_dir, 'h5_files', bag_name)
 		time_start = time.time()
 		wsi = openslide.open_slide(slide_file_path)
+
 		output_file_path = compute_w_loader(h5_file_path, output_path, wsi, 
 		model = model, batch_size = args.batch_size, verbose = 1, print_every = 20, 
 		custom_downsample=args.custom_downsample, target_patch_size=args.target_patch_size)
+
 		time_elapsed = time.time() - time_start
 		print('\ncomputing features for {} took {} s'.format(output_file_path, time_elapsed))
 		file = h5py.File(output_file_path, "r")

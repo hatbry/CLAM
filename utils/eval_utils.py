@@ -32,8 +32,10 @@ def initiate_model(args, ckpt_path):
             model = MIL_fc(**model_dict)
 
     print_network(model)
-
-    ckpt = torch.load(ckpt_path)
+    if torch.cuda.is_available():
+        ckpt = torch.load(ckpt_path)
+    else:
+        ckpt = torch.load(ckpt_path, map_location=torch.device('cpu'))
     ckpt_clean = {}
     for key in ckpt.keys():
         if 'instance_loss_fn' in key:
