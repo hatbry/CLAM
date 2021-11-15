@@ -1,3 +1,3 @@
 slide_id,label,process,status,seg_level,sthresh,mthresh,close,use_otsu,keep_ids,exclude_ids,a_t,a_h,max_n_holes,vis_level,line_thickness,use_padding,contour_fn,bag_size,Pred_0,p_0,Pred_1,p_1
 0031_23_colon_adenocarcinoma,LUAD,1,tbp,-1,15,11,4,False,none,none,100.0,16.0,8,-1,150,True,four_pt,33009.0,LUAD,0.8892174363136292,LSCC,0.11078252643346786
-0032_23_colon_adenocarcinoma,LSCC,1,tbp,-1,15,11,4,False,none,none,100.0,16.0,8,-1,150,True,four_pt,,,,,
+0032_23_colon_adenocarcinoma,LSCC,1,tbp,-1,15,11,4,False,none,none,100.0,16.0,8,-1,150,True,four_pt,75695.0,LSCC,0.6723990440368652,LUAD,0.32760095596313477
